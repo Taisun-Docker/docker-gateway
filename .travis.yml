@@ -29,9 +29,6 @@ jobs:
         - docker tag ${DOCKERHUB_LIVE}:amd64-${TRAVIS_COMMIT} ${DOCKERHUB_LIVE}:amd64-latest
         - docker tag ${DOCKERHUB_LIVE}:arm32v6-${TRAVIS_COMMIT} ${DOCKERHUB_LIVE}:arm32v6-latest
         - docker tag ${DOCKERHUB_LIVE}:arm64v8-${TRAVIS_COMMIT} ${DOCKERHUB_LIVE}:arm64v8-latest
-    - stage: PushContainers
-      if: (branch = master) AND (NOT (type IN (pull_request)))
-      script:
         # Login to DockerHub
         - echo $DOCKERPASS | docker login -u $DOCKERUSER --password-stdin
         # Push all of the tags
