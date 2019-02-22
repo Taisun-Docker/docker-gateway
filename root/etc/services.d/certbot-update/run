@@ -1,0 +1,31 @@
+#!/usr/bin/with-contenv bash
+
+# Main logic callback for daily sleeps to check cert status
+function main {
+  # Check if env vars are set
+  if [ -z ${EMAIL+x} ]; then echo "Fatal: administrator email address must be specified with the environment variable named 'EMAIL'"; exit 1; fi
+  if [ -z ${SERVERIP+x} ]; then echo "Fatal: domain must be specified with the environment variable named 'SERVERIP'"; exit 1; fi
+  # Attempt a cert issue
+  /usr/bin/certbot certonly \
+  --verbose \
+  --noninteractive \
+  --manual \
+  --server "https://acme-v02.api.letsencrypt.org/directory" \
+  --preferred-challenges dns \
+  --agree-tos \
+  --manual-public-ip-logging-ok \
+  --email="${EMAIL}" \
+  -d "*.${SERVERIP}" \
+  --manual-auth-hook /txthook
+  # Permissions
+  chown -R abc:abc  /etc/letsencrypt
+  # Restart the gateway once a day for now
+  kill -9 `pidof node`
+  sleep 86400
+  main
+}
+
+# Sleep for a day
+sleep 86400
+# Run main logic
+main

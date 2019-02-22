@@ -1,0 +1,47 @@
+FROM lsiobase/alpine.arm64:3.9
+
+# Add qemu to build on x86_64 systems
+COPY qemu-aarch64-static /usr/bin
+
+# set version label
+ARG GATEWAY_RELEASE
+LABEL maintainer="thelamer"
+
+RUN \
+ echo "**** install build packages ****" && \
+ apk add --no-cache --virtual=build-dependencies \
+        nodejs-npm && \
+ echo "**** install runtime packages ****" && \
+ apk add --no-cache \
+        apache2-utils \
+        certbot \
+        curl \
+        nodejs && \
+ echo "**** install gateway node application ****" && \
+ if [ -z ${GATEWAY_RELEASE+x} ]; then \
+        GATEWAY_RELEASE=$(curl -sX GET "https://api.github.com/repos/Taisun-Docker/gateway/releases/latest" \
+        | awk '/tag_name/{print $4;exit}' FS='[""]'); \
+ fi && \
+ mkdir -p \
+        /usr/src/Taisun-gateway && \
+ curl -o \
+ /tmp/gateway.tar.gz -L \
+        "https://github.com/Taisun-Docker/gateway/archive/${GATEWAY_RELEASE}.tar.gz" && \
+ tar -xzf \
+ /tmp/gateway.tar.gz -C \
+        /usr/src/Taisun-gateway --strip-components=1 && \
+ echo ${GATEWAY_RELEASE} > /usr/src/Taisun-gateway/version && \
+ echo "**** install node modules ****" && \
+ npm install --prefix /usr/src/Taisun-gateway && \
+ chown -R abc:abc /usr/src/Taisun-gateway && \
+ echo "**** cleanup ****" && \
+ apk del --purge \
+        build-dependencies && \
+ rm -rf \
+        /tmp/*
+
+# add local files
+COPY root/ /
+
+# App runs on 3000
+EXPOSE 3000
